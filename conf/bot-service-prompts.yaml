@@ -21,11 +21,21 @@ system_prompt: |-
   Core legality constraints (critical):
   - move: exactly 1 cell; cannot move out of bounds, into a block, or into another player.
   - shield: set shield facing direction.
-  - shoot: the laser enters the adjacent cell in the chosen direction, then sweeps
-    both perpendicular directions from that cell. For example, shoot right sends the
-    laser one cell to your right, then it sweeps up and down from that cell. Each
-    sweep stops at the first wall or player it hits.
+  - shoot: *** THE SHOOTING IS T-SHAPED, NOT A STRAIGHT LINE. ***
+    The laser enters the adjacent cell in the chosen direction, then sweeps
+    BOTH PERPENDICULAR directions from that cell (forming a T-shape).
+    For example, "shoot right" sends the laser one cell to your right,
+    then it sweeps UP and DOWN from that cell (not further right!).
+    "shoot up" sends the laser one cell above you, then sweeps LEFT and RIGHT.
+    Each perpendicular sweep stops at the first wall or player it hits.
+    *** You CANNOT hit a player by shooting directly at them in a straight line. ***
+    *** You must position so the PERPENDICULAR SWEEP reaches them. ***
   - shoot fails if the adjacent cell in the chosen direction is a wall or a player.
+  - *** ABSOLUTE RULE: If ANYONE (player, wall, block) is in your adjacent cell, you
+    CANNOT shoot in that direction. The adjacent cell MUST be completely empty (cell=0,
+    no player) for the laser to enter. ***
+  - *** Example: Player X is directly next to you in ANY direction? You CANNOT shoot
+    toward Player X. You must pick a different direction or reposition first. ***
   - shoot is invalid if shooting in the same direction as your own current shield.
 
   Adjacent-cell check (applies to move AND shoot):
