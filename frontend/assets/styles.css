@@ -1,0 +1,466 @@
+/*
+ * Copyright (C) 2026 StarHuntingGames
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+:root {
+  --bg-sand: #f3dfbe;
+  --bg-sunset: #d58b51;
+  --ink: #2f1a10;
+  --panel: rgba(255, 246, 231, 0.86);
+  --panel-border: rgba(69, 39, 24, 0.35);
+  --accent: #75401f;
+  --accent-soft: #a86a35;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: "Cabin", sans-serif;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255, 240, 204, 0.75), transparent 30%),
+    radial-gradient(circle at 87% 83%, rgba(132, 73, 37, 0.23), transparent 35%),
+    linear-gradient(155deg, var(--bg-sand), var(--bg-sunset));
+}
+
+.app {
+  width: min(1200px, 100%);
+  margin: 0 auto;
+  padding: 20px;
+  display: grid;
+  gap: 16px;
+}
+
+.hero h1 {
+  margin: 0;
+  font-family: "Rye", serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: clamp(1.9rem, 4.8vw, 3.2rem);
+}
+
+.hero p {
+  margin: 6px 0 0;
+  font-weight: 600;
+}
+
+.layout {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) 360px;
+}
+
+.board-wrap {
+  border: 4px solid rgba(49, 28, 16, 0.9);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow:
+    0 18px 36px rgba(49, 28, 16, 0.25),
+    inset 0 0 0 2px rgba(255, 244, 218, 0.45);
+  background: #d7a26d;
+}
+
+canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.panel {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.card h2 {
+  margin: 0 0 10px;
+  font-size: 1.02rem;
+}
+
+.help {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+#statusLine,
+#roundLine,
+#gameIdLine {
+  margin: 4px 0;
+  font-weight: 700;
+}
+
+#gameIdLine {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.button-row {
+  display: grid;
+  gap: 8px;
+}
+
+.button-row.split {
+  grid-template-columns: auto auto 1fr 1fr;
+  align-items: center;
+}
+
+.num-players-label {
+  font-weight: 600;
+  font-size: 0.92rem;
+  white-space: nowrap;
+}
+
+.command-grid {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.command-row {
+  display: grid;
+  gap: 8px;
+}
+
+/* ---- Action Buttons (A/B/C + Speak) ---- */
+.action-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 2px solid rgba(50, 30, 19, 0.45);
+  border-radius: 10px;
+  padding: 8px 6px;
+  font-family: "Cabin", sans-serif;
+  font-weight: 700;
+  font-size: 0.88rem;
+  background: linear-gradient(180deg, #ede0cc, #d4c0a0);
+  color: #3b2010;
+  cursor: pointer;
+  transition: background 0.08s, box-shadow 0.08s;
+}
+
+.action-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, #f5e8d0, #e6cfa6);
+}
+
+.action-btn:active:not(:disabled) {
+  background: linear-gradient(180deg, #d4b07a, #c09550);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.action-btn.active {
+  background: linear-gradient(180deg, #ffe0a0, #f0b040);
+  border-color: rgba(69, 39, 24, 0.85);
+  box-shadow: 0 0 8px rgba(240, 176, 64, 0.5);
+}
+
+.action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.action-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: rgba(47, 26, 16, 0.12);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+
+.command-row input[type="text"] {
+  border: 1px solid rgba(50, 30, 19, 0.35);
+  border-radius: 8px;
+  padding: 8px 9px;
+  font-family: "Cabin", sans-serif;
+  font-size: 0.92rem;
+  background: rgba(255, 255, 255, 0.9);
+  color: #402416;
+}
+
+.command-row input[type="text"]:disabled {
+  opacity: 0.6;
+}
+
+.command-row input[type="text"].active-input {
+  border-color: rgba(31, 16, 9, 0.95);
+  background: rgba(255, 228, 180, 0.75);
+  box-shadow: 0 0 0 2px rgba(84, 46, 24, 0.18);
+}
+
+/* ---- Arcade D-pad ---- */
+.dpad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  user-select: none;
+}
+
+.dpad-mid {
+  display: flex;
+  gap: 0;
+}
+
+.dpad-btn {
+  width: 56px;
+  height: 56px;
+  font-size: 1.3rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(50, 30, 19, 0.45);
+  background: linear-gradient(180deg, #ede0cc, #d4c0a0);
+  color: #3b2010;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 0;
+  transition: background 0.08s, box-shadow 0.08s;
+}
+
+.dpad-up    { border-radius: 12px 12px 0 0; }
+.dpad-down  { border-radius: 0 0 12px 12px; }
+.dpad-left  { border-radius: 12px 0 0 12px; }
+.dpad-right { border-radius: 0 12px 12px 0; }
+
+.dpad-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, #f5e8d0, #e6cfa6);
+}
+
+.dpad-btn:active:not(:disabled) {
+  background: linear-gradient(180deg, #d4b07a, #c09550);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.dpad-btn.active {
+  background: linear-gradient(180deg, #ffe0a0, #f0b040);
+  border-color: rgba(69, 39, 24, 0.85);
+  box-shadow: 0 0 8px rgba(240, 176, 64, 0.5);
+  color: #2f1a10;
+}
+
+.dpad-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.dpad.active-input .dpad-btn.active {
+  box-shadow: 0 0 10px rgba(240, 176, 64, 0.7);
+}
+
+button {
+  border: 1px solid rgba(50, 30, 19, 0.35);
+  border-radius: 10px;
+  padding: 9px 10px;
+  font-family: "Cabin", sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  background: rgba(255, 255, 255, 0.86);
+  color: #402416;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+button.active {
+  border-color: rgba(41, 20, 10, 0.9);
+  background: rgba(255, 215, 145, 0.9);
+}
+
+button.primary {
+  background: linear-gradient(180deg, #ffe8bf, #f0b65f);
+  border-color: rgba(69, 39, 24, 0.72);
+}
+
+.connect-row {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr auto;
+}
+
+#gameIdInput {
+  border: 1px solid rgba(50, 30, 19, 0.35);
+  border-radius: 8px;
+  padding: 8px 9px;
+  font-family: "Cabin", sans-serif;
+  font-size: 0.92rem;
+  background: rgba(255, 255, 255, 0.9);
+  color: #402416;
+}
+
+#gameIdInput:disabled {
+  opacity: 0.6;
+}
+
+.info-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.players-list,
+.log-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.players-list li,
+.log-list li {
+  background: rgba(255, 255, 255, 0.58);
+  border-radius: 8px;
+  padding: 7px 9px;
+  font-size: 0.94rem;
+}
+
+.players-list li.dead {
+  opacity: 0.6;
+}
+
+/* ---- Rules / How-to Section ---- */
+.rules-section {
+  margin-top: 4px;
+}
+
+.rules-card {
+  padding: 14px 16px;
+}
+
+.rules-toggle {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rules-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.rules-toggle::before {
+  content: "▸";
+  font-size: 1.1rem;
+  transition: transform 0.2s;
+}
+
+details[open] > .rules-toggle::before {
+  transform: rotate(90deg);
+}
+
+.rules-toggle h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.rules-content {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 20px;
+  align-items: start;
+  margin-top: 14px;
+}
+
+.rules-diagram {
+  width: 260px;
+  height: auto;
+  border-radius: 12px;
+  border: 2px solid var(--panel-border);
+  box-shadow: 0 4px 14px rgba(49, 28, 16, 0.18);
+}
+
+.rules-text {
+  font-size: 0.94rem;
+  line-height: 1.55;
+}
+
+.rules-text p {
+  margin: 0 0 8px;
+}
+
+.rules-text ul {
+  margin: 0 0 8px;
+  padding-left: 20px;
+}
+
+.rules-text li {
+  margin-bottom: 4px;
+}
+
+@media (max-width: 640px) {
+  .rules-content {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .rules-diagram {
+    width: 220px;
+  }
+}
+
+@media (max-width: 1060px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .panel {
+    grid-template-columns: 1fr;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+}

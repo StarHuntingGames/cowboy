@@ -1,0 +1,111 @@
+<!--
+  Copyright (C) 2026 StarHuntingGames
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cow Boy - Turn Battle</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Rye&family=Cabin:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="hero">
+      <h1>Cow Boy</h1>
+      <p>Turn battle: 1–4 players named A, B, C, D (Up, Left, Down, Right).</p>
+    </header>
+
+    <section class="layout">
+      <section class="board-wrap" aria-label="Game board">
+        <canvas id="gameCanvas" width="720" height="720" role="img" aria-label="Turn-based cowboy battle board"></canvas>
+      </section>
+
+      <aside class="panel" aria-label="Game controls">
+        <div class="card">
+          <h2>Turn</h2>
+          <p id="statusLine">Press New.</p>
+          <p id="roundLine">Round: 1</p>
+          <p id="gameIdLine">Game ID: -</p>
+        </div>
+
+        <div class="card">
+          <h2>Your Command</h2>
+          <p class="help">
+            Choose one <code>command</code> each turn. Use <code>direction</code> for move/shield/shoot, or fill <code>speak text</code> for speak.
+          </p>
+          <div id="commandGrid" class="command-grid">
+            <!-- Player command rows are generated dynamically by game.js -->
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Match</h2>
+          <div class="button-row split">
+            <label for="numPlayersSelect" class="num-players-label">Players:</label>
+            <select id="numPlayersSelect" aria-label="Number of players">
+              <option value="1">1</option>
+              <option value="2" selected>2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+            </select>
+            <button id="newButton" type="button" class="primary">New</button>
+            <button id="startButton" type="button" class="primary">Start</button>
+          </div>
+          <div class="connect-row">
+            <input id="gameIdInput" type="text" placeholder="Paste Game ID to connect" aria-label="Game ID" />
+            <button id="connectButton" type="button">Connect</button>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="info-grid">
+      <article class="card">
+        <h2>Players</h2>
+        <ul id="playersList" class="players-list"></ul>
+      </article>
+
+      <article class="card">
+        <h2>Log</h2>
+        <ul id="logList" class="log-list"></ul>
+      </article>
+    </section>
+
+    <section class="rules-section">
+      <details class="card rules-card" open>
+        <summary class="rules-toggle"><h2>How Shooting Works</h2></summary>
+        <div class="rules-content">
+          <img src="assets/laser-sweep-diagram.png" alt="Laser sweep diagram: shoot right sends the laser one cell right, then sweeps up and down" class="rules-diagram" />
+          <div class="rules-text">
+            <p><strong>Laser Sweep:</strong> When you shoot in a direction, the laser enters the adjacent cell, then sweeps <em>both perpendicular directions</em> from that cell.</p>
+            <ul>
+              <li><strong>Shoot Right / Left</strong> &rarr; laser sweeps <strong>Up &amp; Down</strong></li>
+              <li><strong>Shoot Up / Down</strong> &rarr; laser sweeps <strong>Left &amp; Right</strong></li>
+            </ul>
+            <p>Each sweep stops at the first <strong>wall</strong> or <strong>player</strong> it hits. If the adjacent cell is blocked by a wall or player, the shot <strong>fails</strong>.</p>
+          </div>
+        </div>
+      </details>
+    </section>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>

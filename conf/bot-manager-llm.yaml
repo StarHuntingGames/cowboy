@@ -1,0 +1,45 @@
+# Copyright (C) 2026 StarHuntingGames
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# Bot Manager per-player LLM configuration.
+#
+# Fill in your provider values here.
+# Keys are optional; player values override `default`.
+# Supported player keys: A, B, C, D.
+#
+# ${ENV_VAR} placeholders are expanded from environment variables at load time.
+
+default:
+  # Example: https://api.openai.com/v1
+  base_url: "https://openrouter.ai/api/v1"
+  # Example: openai:gpt-4o-mini
+  model: "google/gemini-3-flash-preview"
+  # Supports ${ENV_VAR} substitution. Example: ${BOT_LLM_API_KEY}
+  api_key: "${BOT_LLM_API_KEY}"
+
+players:
+  B:
+    # Override only if player B should use a different model/provider.
+    base_url: "https://openrouter.ai/api/v1"
+    model: "openai/gpt-5.2-codex"
+    api_key: "${BOT_LLM_API_KEY}"
+  C:
+    base_url: "https://openrouter.ai/api/v1"
+    model: "openai/gpt-5.2-codex"
+    api_key: "${BOT_LLM_API_KEY}"
+  D:
+    base_url: "https://openrouter.ai/api/v1"
+    model: "openai/gpt-5.2-codex"
+    api_key: "${BOT_LLM_API_KEY}"

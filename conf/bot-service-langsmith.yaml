@@ -1,0 +1,41 @@
+# Copyright (C) 2026 StarHuntingGames
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# Bot Service LangSmith configuration for deepagents player agents.
+#
+# Fill this file with your LangSmith settings.
+# The bot-service reads this file via BOT_AGENT_LANGSMITH_CONFIG_PATH and
+# injects these values as environment variables into each Python player-agent process.
+
+enabled: true
+
+# LangSmith API key.
+# Set via LANGSMITH_API_KEY env var, or fill in here:
+api_key: "${LANGSMITH_API_KEY}"
+
+# LangSmith API endpoint.
+endpoint: "https://api.smith.langchain.com"
+
+# LangSmith project name for traces.
+project: "CowBoy"
+
+# Optional workspace id.
+workspace_id: ""
+
+# Optional additional env vars passed to Python deepagents runtime.
+# Example:
+# extra_env:
+#   LANGSMITH_RUNS_API_URL: "https://..."
+extra_env: {}

@@ -1,0 +1,26 @@
+/.idea/
+/backend/target/
+**/*.rs.bk
+.env
+/node_modules/
+/.playwright-mcp/
+
+# Python
+__pycache__/
+.pytest_cache/
+.venv/
+
+# Test output
+test-results/
+.output.txt
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+*.swp
+*.swo
+
+# Lock files
+uv.lock

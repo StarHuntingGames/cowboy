@@ -1,0 +1,10 @@
+deepagents>=0.3.12
+langchain
+langchain-openai==1.1.8
+langchain-anthropic
+fastapi
+uvicorn
+boto3
+httpx
+pytest
+pytest-asyncio
