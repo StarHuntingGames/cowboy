@@ -1,0 +1,20 @@
+[project]
+name = "cowboy-mcp"
+version = "0.1.0"
+description = "MCP server for controlling a player in the Cowboy multiplayer game"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=1.0.0",
+    "httpx>=0.27.0",
+    "websockets>=13.0",
+]
+
+[project.scripts]
+cowboy-mcp = "cowboy_mcp.server:main"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -84,6 +84,14 @@ make up
 
 完整规则请参阅 [docs/GAME_RULES.md](docs/GAME_RULES.md)。
 
+## MCP 服务器（AI 代理控制）
+
+本项目包含一个 MCP 服务器，允许任何 AI 代理（Claude 等）通过 [Model Context Protocol](https://modelcontextprotocol.io/) 来玩 Cowboy 游戏。代理可以绑定到正在进行的游戏中的任意玩家（A/B/C/D），实时观察棋盘状态，并提交操作——移动、射击、护盾或发言。
+
+可用工具：`bind_player`、`get_game_state`、`wait_for_my_turn`、`submit_action`、`get_session_info`。
+
+详细的安装、配置和使用说明请参阅 [mcp/HOW_TO_USE.md](mcp/HOW_TO_USE.md)。
+
 ## 配置
 
 ### API 密钥
@@ -172,6 +180,7 @@ make e2e-llm-connection-test       # 真实 LLM 连接测试
 ## 文档
 
 - [游戏规则](docs/GAME_RULES.md)
+- [MCP 服务器指南](mcp/HOW_TO_USE.md)
 - [架构设计](docs/V3_ARCHITECTURE_DESIGN.md)
 - [运行指南](docs/HOW_TO_RUN_V2.md)
 - [API 变更](docs/V3_API_CHANGES.md)

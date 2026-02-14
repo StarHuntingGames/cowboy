@@ -84,6 +84,14 @@ Per-game topics: `game.commands.<game_id>.v1` (input), `game.output.<game_id>.v1
 
 See [docs/GAME_RULES.md](docs/GAME_RULES.md) for full rules.
 
+## MCP Server (AI Agent Control)
+
+The project includes an MCP server that lets any AI agent (Claude, etc.) play Cowboy by controlling a player via the [Model Context Protocol](https://modelcontextprotocol.io/). The agent can bind to any player (A/B/C/D) in a running game, observe the board state in real time, and submit actions — move, shoot, shield, or speak.
+
+Available tools: `bind_player`, `get_game_state`, `wait_for_my_turn`, `submit_action`, `get_session_info`.
+
+See [mcp/HOW_TO_USE.md](mcp/HOW_TO_USE.md) for setup, configuration, and usage details.
+
 ## Configuration
 
 ### API Keys
@@ -172,6 +180,7 @@ make e2e-llm-connection-test       # Real LLM connectivity
 ## Documentation
 
 - [Game Rules](docs/GAME_RULES.md)
+- [MCP Server Guide](mcp/HOW_TO_USE.md)
 - [Architecture Design](docs/V3_ARCHITECTURE_DESIGN.md)
 - [How to Run](docs/HOW_TO_RUN_V2.md)
 - [API Changes](docs/V3_API_CHANGES.md)
