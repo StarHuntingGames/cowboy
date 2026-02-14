@@ -1,3 +1,5 @@
+English | [中文](README_CN.md)
+
 # Cowboy
 
 A turn-based multiplayer battle game where 1–4 players compete on a grid map. Players can move, shoot lasers, and position shields. Player A is human-controlled; the rest are AI bots powered by LLMs (GPT, Gemini, Claude, etc.) via LangChain.
