@@ -65,10 +65,19 @@
               <option value="3">3</option>
               <option value="4">4</option>
             </select>
+            <label for="numHumanPlayersSelect" class="num-players-label">Humans:</label>
+            <select id="numHumanPlayersSelect" aria-label="Number of human players">
+              <option value="1" selected>1</option>
+              <option value="2">2</option>
+            </select>
             <button id="newButton" type="button" class="primary">New</button>
             <button id="startButton" type="button" class="primary">Start</button>
           </div>
           <div class="connect-row">
+            <label for="playAsSelect" class="num-players-label">Play As:</label>
+            <select id="playAsSelect" aria-label="Play as player">
+              <option value="A" selected>A</option>
+            </select>
             <input id="gameIdInput" type="text" placeholder="Paste Game ID to connect" aria-label="Game ID" />
             <button id="connectButton" type="button">Connect</button>
           </div>

@@ -125,7 +125,7 @@ canvas {
 }
 
 .button-row.split {
-  grid-template-columns: auto auto 1fr 1fr;
+  grid-template-columns: auto auto auto auto 1fr 1fr;
   align-items: center;
 }
 
@@ -320,7 +320,8 @@ button.primary {
   margin-top: 10px;
   display: grid;
   gap: 8px;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
 }
 
 #gameIdInput {

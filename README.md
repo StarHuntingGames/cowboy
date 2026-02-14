@@ -88,7 +88,32 @@ See [docs/GAME_RULES.md](docs/GAME_RULES.md) for full rules.
 
 The project includes an MCP server that lets any AI agent (Claude, etc.) play Cowboy by controlling a player via the [Model Context Protocol](https://modelcontextprotocol.io/). The agent can bind to any player (A/B/C/D) in a running game, observe the board state in real time, and submit actions — move, shoot, shield, or speak.
 
-Available tools: `bind_player`, `get_game_state`, `wait_for_my_turn`, `submit_action`, `get_session_info`.
+### Control Human Players with AI
+
+Instead of playing manually through the browser, you can let an AI agent take over a human player slot via MCP. This means you can watch Claude, GPT, or any MCP-compatible AI agent play the game for you — or even pit multiple AI agents against each other, each controlling a different human player.
+
+**How it works:**
+
+1. Start a game from the frontend and set the number of human players (e.g., 2 humans, 2 bots)
+2. Connect your AI agent (e.g., Claude Code) to the MCP server
+3. The agent binds to a human player slot (A, B, C, or D) using `bind_player`
+4. The agent receives all game events in real time — moves, shots, shields, speaks, and more
+5. The agent decides and submits actions each turn, either via built-in autoplay heuristics or its own reasoning
+
+```
+Frontend (browser)          MCP Server              AI Agent (Claude Code, etc.)
+       │                        │                           │
+       │   Create game          │                           │
+       │   (2 humans, 2 bots)   │                           │
+       │                        │    bind_player(game, "A") │
+       │                        │◄──────────────────────────│
+       │   Start game           │                           │
+       │                        │    ── game events ──────► │
+       │                        │    ◄── submit_action ──── │
+       │   Watch the battle!    │                           │
+```
+
+Available tools: `bind_player`, `get_game_state`, `wait_for_my_turn`, `submit_action`, `get_session_info`, `set_autoplay`, `get_autoplay_status`, `explain_next_autoplay_move`.
 
 See [mcp/HOW_TO_USE.md](mcp/HOW_TO_USE.md) for setup, configuration, and usage details.
 

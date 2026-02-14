@@ -88,7 +88,32 @@ make up
 
 本项目包含一个 MCP 服务器，允许任何 AI 代理（Claude 等）通过 [Model Context Protocol](https://modelcontextprotocol.io/) 来玩 Cowboy 游戏。代理可以绑定到正在进行的游戏中的任意玩家（A/B/C/D），实时观察棋盘状态，并提交操作——移动、射击、护盾或发言。
 
-可用工具：`bind_player`、`get_game_state`、`wait_for_my_turn`、`submit_action`、`get_session_info`。
+### 用 AI 控制人类玩家
+
+你不必通过浏览器手动操作，而是可以让 AI 代理通过 MCP 接管人类玩家的位置。这意味着你可以观看 Claude、GPT 或任何兼容 MCP 的 AI 代理替你玩游戏——甚至可以让多个 AI 代理互相对战，每个代理控制一个不同的人类玩家。
+
+**工作流程：**
+
+1. 在前端创建游戏并设置人类玩家数量（例如 2 个人类、2 个机器人）
+2. 将你的 AI 代理（如 Claude Code）连接到 MCP 服务器
+3. 代理通过 `bind_player` 绑定到一个人类玩家位置（A、B、C 或 D）
+4. 代理实时接收所有游戏事件——移动、射击、护盾、发言等
+5. 代理在每个回合决策并提交操作，可以使用内置的自动对战策略，也可以使用自身的推理能力
+
+```
+前端（浏览器）                MCP 服务器                AI 代理（Claude Code 等）
+       │                        │                           │
+       │   创建游戏              │                           │
+       │   （2 人类，2 机器人）    │                           │
+       │                        │    bind_player(game, "A") │
+       │                        │◄──────────────────────────│
+       │   开始游戏              │                           │
+       │                        │    ── 游戏事件 ─────────► │
+       │                        │    ◄── submit_action ──── │
+       │   观看对战！             │                           │
+```
+
+可用工具：`bind_player`、`get_game_state`、`wait_for_my_turn`、`submit_action`、`get_session_info`、`set_autoplay`、`get_autoplay_status`、`explain_next_autoplay_move`。
 
 详细的安装、配置和使用说明请参阅 [mcp/HOW_TO_USE.md](mcp/HOW_TO_USE.md)。
 

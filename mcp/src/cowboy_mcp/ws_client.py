@@ -19,7 +19,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 import websockets
 
@@ -103,16 +103,26 @@ class GameWebSocket:
 
         event_type = msg.get("event_type", "")
 
+        # Record all game events (exclude internal CONNECTED/SNAPSHOT/ERROR)
+        if event_type not in ("CONNECTED", "SNAPSHOT", "ERROR", ""):
+            event_record: dict[str, Any] = {"event_type": event_type}
+            for key in ("player_id", "command_type", "direction", "speak_text",
+                        "result_status", "turn_no", "round_no", "step_seq"):
+                if key in msg:
+                    event_record[key] = msg[key]
+            self._session.add_event(event_record)
+            logger.info("Event: %s %s", event_type, {
+                k: v for k, v in event_record.items() if k != "event_type"
+            })
+
         if event_type == "GAME_FINISHED":
             self._session.game_status = "FINISHED"
             snapshot = msg.get("snapshot")
             if snapshot:
                 self._session.update_snapshot(snapshot)
             else:
-                # Signal waiters even without a snapshot
                 self._session._turn_event.set()
                 self._session._turn_event.clear()
-            logger.info("Game finished: %s", self._session.game_id)
             return
 
         # Events that carry a snapshot

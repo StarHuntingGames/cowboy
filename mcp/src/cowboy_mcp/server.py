@@ -591,6 +591,17 @@ async def _autoplay_loop(bound_session: Session) -> None:
             if bound_session.game_status == "FINISHED":
                 break
 
+            # If game hasn't started, poll via HTTP until it does.
+            if bound_session.game_status not in ("RUNNING", "FINISHED"):
+                try:
+                    snapshot = await _client.get_snapshot(bound_session.game_id)
+                    bound_session.update_snapshot(snapshot)
+                except Exception:
+                    pass
+                if bound_session.game_status not in ("RUNNING", "FINISHED"):
+                    await asyncio.sleep(2.0)
+                    continue
+
             got_turn = await bound_session.wait_for_turn(
                 timeout=AUTO_PLAY_WAIT_TIMEOUT_SECONDS
             )
@@ -784,6 +795,7 @@ async def get_game_state() -> str:
             "game_status": session.game_status,
             "is_my_turn": session.is_my_turn,
             "snapshot": session.latest_snapshot,
+            "recent_events": session.get_recent_events(),
         },
         indent=2,
     )
@@ -811,6 +823,23 @@ async def wait_for_my_turn(timeout_seconds: float = 120.0) -> str:
             },
             indent=2,
         )
+
+    # If game hasn't started yet, poll via HTTP until it does (or we timeout).
+    # The WebSocket may not deliver events for CREATED games.
+    if session.game_status not in ("RUNNING", "FINISHED"):
+        deadline = asyncio.get_event_loop().time() + timeout_seconds
+        while asyncio.get_event_loop().time() < deadline:
+            try:
+                snapshot = await _client.get_snapshot(session.game_id)
+                session.update_snapshot(snapshot)
+            except Exception:
+                pass
+            if session.game_status in ("RUNNING", "FINISHED"):
+                break
+            remaining = deadline - asyncio.get_event_loop().time()
+            if remaining <= 0:
+                break
+            await asyncio.sleep(min(remaining, 2.0))
 
     got_turn = await session.wait_for_turn(timeout=timeout_seconds)
 
@@ -844,6 +873,7 @@ async def wait_for_my_turn(timeout_seconds: float = 120.0) -> str:
             "player_name": session.player_name,
             "turn_no": session.turn_no,
             "snapshot": session.latest_snapshot,
+            "recent_events": session.get_recent_events(),
         },
         indent=2,
     )
@@ -930,6 +960,7 @@ async def get_session_info() -> str:
             "turn_no": _session.turn_no,
             "ws_connected": _session.ws_connected,
             "autoplay": _autoplay_status_payload(),
+            "recent_events": _session.get_recent_events(),
         },
         indent=2,
     )

@@ -25,8 +25,7 @@ use axum::{
 };
 use chrono::Utc;
 use cowboy_common::{
-    CommandType, Direction, GameInstanceResponse, GameStatus, PlayerId, ResultStatus,
-    SnapshotResponse, StepEvent, StepEventType,
+    CommandType, GameInstanceResponse, GameStatus, SnapshotResponse, StepEvent, StepEventType,
 };
 use lambda_http::run as lambda_run;
 use rdkafka::{
@@ -50,57 +49,10 @@ struct AppState {
 }
 
 #[derive(Debug, Clone)]
-enum WatcherBroadcastEvent {
-    Timeout(TimeoutBroadcastEvent),
-    Speak(SpeakBroadcastEvent),
-    Shoot(ShootBroadcastEvent),
-    GameFinished(GameFinishedBroadcastEvent),
-}
-
-#[derive(Debug, Clone)]
-struct TimeoutBroadcastEvent {
+struct WatcherBroadcastEvent {
     game_id: String,
-    step_seq: u64,
-    turn_no: u64,
-    round_no: u64,
-    player_id: Option<PlayerId>,
-    result_status: ResultStatus,
-    created_at: chrono::DateTime<Utc>,
-    snapshot: Option<SnapshotResponse>,
-}
-
-#[derive(Debug, Clone)]
-struct GameFinishedBroadcastEvent {
-    game_id: String,
-    step_seq: u64,
-    turn_no: u64,
-    round_no: u64,
-    created_at: chrono::DateTime<Utc>,
-    snapshot: Option<SnapshotResponse>,
-}
-
-#[derive(Debug, Clone)]
-struct SpeakBroadcastEvent {
-    game_id: String,
-    step_seq: u64,
-    turn_no: u64,
-    round_no: u64,
-    player_id: Option<PlayerId>,
-    speak_text: String,
-    created_at: chrono::DateTime<Utc>,
-    snapshot: Option<SnapshotResponse>,
-}
-
-#[derive(Debug, Clone)]
-struct ShootBroadcastEvent {
-    game_id: String,
-    step_seq: u64,
-    turn_no: u64,
-    round_no: u64,
-    player_id: Option<PlayerId>,
-    direction: Option<Direction>,
-    command_id: String,
-    created_at: chrono::DateTime<Utc>,
+    ws_event_type: String,
+    ws_payload: String,
     snapshot: Option<SnapshotResponse>,
 }
 
@@ -310,150 +262,23 @@ async fn handle_socket(
             }
             event = watch_events_rx.recv() => {
                 match event {
-                    Ok(WatcherBroadcastEvent::Timeout(timeout)) => {
-                        if timeout.game_id != game_id {
+                    Ok(ev) => {
+                        if ev.game_id != game_id {
                             continue;
                         }
 
-                        if let Some(snapshot) = timeout.snapshot.as_ref() {
+                        if let Some(snapshot) = ev.snapshot.as_ref() {
                             last_sent_turn_no = last_sent_turn_no.max(snapshot.turn_no);
                             last_status = Some(snapshot.status);
                             sent_initial = true;
                         }
 
-                        let payload = serde_json::json!({
-                            "event_type": "TIMEOUT",
-                            "game_id": timeout.game_id.as_str(),
-                            "step_seq": timeout.step_seq,
-                            "turn_no": timeout.turn_no,
-                            "round_no": timeout.round_no,
-                            "player_id": timeout.player_id,
-                            "result_status": timeout.result_status,
-                            "timeout_at": timeout.created_at,
-                            "snapshot": timeout.snapshot.clone(),
-                            "emitted_at": Utc::now(),
-                        })
-                        .to_string();
-
                         if send_ws_event(
                             &mut socket,
                             &game_id,
-                            "TIMEOUT",
-                            payload,
-                            timeout.snapshot.as_ref(),
-                        )
-                            .await
-                            .is_err()
-                        {
-                            break;
-                        }
-                    }
-                    Ok(WatcherBroadcastEvent::GameFinished(finished)) => {
-                        if finished.game_id != game_id {
-                            continue;
-                        }
-
-                        if let Some(snapshot) = finished.snapshot.as_ref() {
-                            last_sent_turn_no = last_sent_turn_no.max(snapshot.turn_no);
-                            last_status = Some(snapshot.status);
-                            sent_initial = true;
-                        }
-
-                        let payload = serde_json::json!({
-                            "event_type": "GAME_FINISHED",
-                            "game_id": finished.game_id.as_str(),
-                            "step_seq": finished.step_seq,
-                            "turn_no": finished.turn_no,
-                            "round_no": finished.round_no,
-                            "finished_at": finished.created_at,
-                            "snapshot": finished.snapshot.clone(),
-                            "emitted_at": Utc::now(),
-                        })
-                        .to_string();
-
-                        if send_ws_event(
-                            &mut socket,
-                            &game_id,
-                            "GAME_FINISHED",
-                            payload,
-                            finished.snapshot.as_ref(),
-                        )
-                            .await
-                            .is_err()
-                        {
-                            break;
-                        }
-                    }
-                    Ok(WatcherBroadcastEvent::Speak(speak)) => {
-                        if speak.game_id != game_id {
-                            continue;
-                        }
-
-                        if let Some(snapshot) = speak.snapshot.as_ref() {
-                            last_sent_turn_no = last_sent_turn_no.max(snapshot.turn_no);
-                            last_status = Some(snapshot.status);
-                            sent_initial = true;
-                        }
-
-                        let payload = serde_json::json!({
-                            "event_type": "SPEAK",
-                            "game_id": speak.game_id.as_str(),
-                            "step_seq": speak.step_seq,
-                            "turn_no": speak.turn_no,
-                            "round_no": speak.round_no,
-                            "player_id": speak.player_id,
-                            "speak_text": speak.speak_text.as_str(),
-                            "spoke_at": speak.created_at,
-                            "snapshot": speak.snapshot.clone(),
-                            "emitted_at": Utc::now(),
-                        })
-                        .to_string();
-
-                        if send_ws_event(
-                            &mut socket,
-                            &game_id,
-                            "SPEAK",
-                            payload,
-                            speak.snapshot.as_ref(),
-                        )
-                            .await
-                            .is_err()
-                        {
-                            break;
-                        }
-                    }
-                    Ok(WatcherBroadcastEvent::Shoot(shoot)) => {
-                        if shoot.game_id != game_id {
-                            continue;
-                        }
-
-                        if let Some(snapshot) = shoot.snapshot.as_ref() {
-                            last_sent_turn_no = last_sent_turn_no.max(snapshot.turn_no);
-                            last_status = Some(snapshot.status);
-                            sent_initial = true;
-                        }
-
-                        let payload = serde_json::json!({
-                            "event_type": "SHOOT",
-                            "game_id": shoot.game_id.as_str(),
-                            "step_seq": shoot.step_seq,
-                            "turn_no": shoot.turn_no,
-                            "round_no": shoot.round_no,
-                            "player_id": shoot.player_id,
-                            "direction": shoot.direction,
-                            "command_id": shoot.command_id.as_str(),
-                            "shot_at": shoot.created_at,
-                            "snapshot": shoot.snapshot.clone(),
-                            "emitted_at": Utc::now(),
-                        })
-                        .to_string();
-
-                        if send_ws_event(
-                            &mut socket,
-                            &game_id,
-                            "SHOOT",
-                            payload,
-                            shoot.snapshot.as_ref(),
+                            &ev.ws_event_type,
+                            ev.ws_payload,
+                            ev.snapshot.as_ref(),
                         )
                             .await
                             .is_err()
@@ -462,7 +287,7 @@ async fn handle_socket(
                         }
                     }
                     Err(broadcast::error::RecvError::Lagged(skipped)) => {
-                        warn!(game_id = %game_id, skipped, "watcher stream lagged timeout events");
+                        warn!(game_id = %game_id, skipped, "watcher stream lagged broadcast events");
                     }
                     Err(broadcast::error::RecvError::Closed) => {
                         break;
@@ -573,121 +398,21 @@ async fn run_output_consumer(state: AppState) {
             }
         };
 
-        if is_timeout_step(&step) {
-            let timeout_event = TimeoutBroadcastEvent {
-                game_id: step.game_id.clone(),
-                step_seq: step.step_seq,
-                turn_no: step.turn_no,
-                round_no: step.round_no,
-                player_id: step
-                    .command
-                    .as_ref()
-                    .and_then(|command| command.player_id.clone()),
-                result_status: step.result_status,
-                created_at: step.created_at,
-                snapshot: snapshot.clone(),
-            };
+        let ws_event_type = step_ws_event_type(&step);
+        let ws_payload = build_step_ws_payload(&step, &snapshot, ws_event_type);
 
-            if state.watch_events_tx.receiver_count() > 0
-                && let Err(error) = state
-                    .watch_events_tx
-                    .send(WatcherBroadcastEvent::Timeout(timeout_event))
-            {
-                warn!(
-                    ?error,
-                    "failed to fan out timeout event to websocket subscribers"
-                );
-            }
-        }
-
-        if is_game_finished_step(&step) {
-            let finished_event = GameFinishedBroadcastEvent {
-                game_id: step.game_id.clone(),
-                step_seq: step.step_seq,
-                turn_no: step.turn_no,
-                round_no: step.round_no,
-                created_at: step.created_at,
-                snapshot: snapshot.clone(),
-            };
-
-            if state.watch_events_tx.receiver_count() > 0
-                && let Err(error) = state
-                    .watch_events_tx
-                    .send(WatcherBroadcastEvent::GameFinished(finished_event))
-            {
-                warn!(
-                    ?error,
-                    "failed to fan out game-finished event to websocket subscribers"
-                );
-            }
-        }
-
-        if is_speak_step(&step) {
-            let speak_text = step
-                .command
-                .as_ref()
-                .and_then(|command| command.speak_text.clone())
-                .unwrap_or_default();
-            if speak_text.trim().is_empty() {
-                continue;
-            }
-
-            let speak_event = SpeakBroadcastEvent {
-                game_id: step.game_id.clone(),
-                step_seq: step.step_seq,
-                turn_no: step.turn_no,
-                round_no: step.round_no,
-                player_id: step
-                    .command
-                    .as_ref()
-                    .and_then(|command| command.player_id.clone()),
-                speak_text,
-                created_at: step.created_at,
-                snapshot: snapshot.clone(),
-            };
-
-            if state.watch_events_tx.receiver_count() > 0
-                && let Err(error) = state
-                    .watch_events_tx
-                    .send(WatcherBroadcastEvent::Speak(speak_event))
-            {
-                warn!(
-                    ?error,
-                    "failed to fan out speak event to websocket subscribers"
-                );
-            }
-        }
-
-        if is_shoot_step(&step) {
-            let shoot_event = ShootBroadcastEvent {
-                game_id: step.game_id.clone(),
-                step_seq: step.step_seq,
-                turn_no: step.turn_no,
-                round_no: step.round_no,
-                player_id: step
-                    .command
-                    .as_ref()
-                    .and_then(|command| command.player_id.clone()),
-                direction: step.command.as_ref().and_then(|command| command.direction),
-                command_id: step
-                    .command
-                    .as_ref()
-                    .map(|command| command.command_id.clone())
-                    .unwrap_or_default(),
-                created_at: step.created_at,
+        if state.watch_events_tx.receiver_count() > 0
+            && let Err(error) = state.watch_events_tx.send(WatcherBroadcastEvent {
+                game_id: step.game_id,
+                ws_event_type: ws_event_type.to_string(),
+                ws_payload,
                 snapshot,
-            };
-
-            if state.watch_events_tx.receiver_count() > 0
-                && let Err(error) = state
-                    .watch_events_tx
-                    .send(WatcherBroadcastEvent::Shoot(shoot_event))
-            {
-                warn!(
-                    ?error,
-                    "failed to fan out shoot event to websocket subscribers"
-                );
-            }
+            })
+        {
+            warn!(
+                ?error,
+                "failed to fan out step event to websocket subscribers"
+            );
         }
     }
 }
@@ -748,12 +473,7 @@ async fn consume_output_steps(
             }
         };
 
-        if (is_timeout_step(&step)
-            || is_game_finished_step(&step)
-            || is_speak_step(&step)
-            || is_shoot_step(&step))
-            && step_tx.send(step).await.is_err()
-        {
+        if step_tx.send(step).await.is_err() {
             return Ok(());
         }
 
@@ -763,38 +483,59 @@ async fn consume_output_steps(
     }
 }
 
-fn is_timeout_step(step: &StepEvent) -> bool {
-    step.event_type == StepEventType::TimeoutApplied
-        || (step
-            .command
-            .as_ref()
-            .map(|command| command.command_type == CommandType::Timeout)
-            .unwrap_or(false)
-            && step.result_status == ResultStatus::TimeoutApplied)
+fn step_ws_event_type(step: &StepEvent) -> &'static str {
+    match step.event_type {
+        StepEventType::GameStarted => "GAME_STARTED",
+        StepEventType::GameFinished => "GAME_FINISHED",
+        StepEventType::TimeoutApplied => "TIMEOUT",
+        StepEventType::StepApplied => {
+            if let Some(cmd) = step.command.as_ref() {
+                match cmd.command_type {
+                    CommandType::Move => "MOVE",
+                    CommandType::Shoot => "SHOOT",
+                    CommandType::Shield => "SHIELD",
+                    CommandType::Speak => "SPEAK",
+                    CommandType::Timeout => "TIMEOUT",
+                    CommandType::GameStarted => "GAME_STARTED",
+                }
+            } else {
+                "STEP_APPLIED"
+            }
+        }
+    }
 }
 
-fn is_game_finished_step(step: &StepEvent) -> bool {
-    step.event_type == StepEventType::GameFinished
-}
+fn build_step_ws_payload(
+    step: &StepEvent,
+    snapshot: &Option<SnapshotResponse>,
+    ws_event_type: &str,
+) -> String {
+    let mut payload = serde_json::json!({
+        "event_type": ws_event_type,
+        "game_id": step.game_id,
+        "step_seq": step.step_seq,
+        "turn_no": step.turn_no,
+        "round_no": step.round_no,
+        "result_status": step.result_status,
+        "created_at": step.created_at,
+        "snapshot": snapshot,
+        "emitted_at": Utc::now(),
+    });
 
-fn is_speak_step(step: &StepEvent) -> bool {
-    step.event_type == StepEventType::StepApplied
-        && step.result_status == ResultStatus::Applied
-        && step
-            .command
-            .as_ref()
-            .map(|command| command.command_type == CommandType::Speak)
-            .unwrap_or(false)
-}
+    if let Some(cmd) = step.command.as_ref() {
+        let obj = payload.as_object_mut().unwrap();
+        obj.insert("player_id".into(), serde_json::json!(cmd.player_id));
+        obj.insert("command_type".into(), serde_json::json!(cmd.command_type));
+        if let Some(dir) = cmd.direction {
+            obj.insert("direction".into(), serde_json::json!(dir));
+        }
+        if let Some(text) = &cmd.speak_text {
+            obj.insert("speak_text".into(), serde_json::json!(text));
+        }
+        obj.insert("command_id".into(), serde_json::json!(cmd.command_id));
+    }
 
-fn is_shoot_step(step: &StepEvent) -> bool {
-    step.event_type == StepEventType::StepApplied
-        && step.result_status == ResultStatus::Applied
-        && step
-            .command
-            .as_ref()
-            .map(|command| command.command_type == CommandType::Shoot)
-            .unwrap_or(false)
+    payload.to_string()
 }
 
 #[derive(Debug)]
@@ -880,11 +621,11 @@ impl IntoResponse for ApiError {
 mod tests {
     use super::*;
     use cowboy_common::{
-        CommandEnvelope, CommandSource, GameStateSnapshot, MapSource, default_map,
+        CommandEnvelope, CommandSource, GameStateSnapshot, MapSource, ResultStatus, default_map,
         initial_players,
     };
 
-    fn timeout_step(event_type: StepEventType, command_type: Option<CommandType>) -> StepEvent {
+    fn make_step(event_type: StepEventType, command_type: Option<CommandType>) -> StepEvent {
         let command = command_type.map(|kind| CommandEnvelope {
             command_id: "cmd-1".to_string(),
             source: CommandSource::Timer,
@@ -903,7 +644,7 @@ mod tests {
             turn_no: 4,
             round_no: 2,
             event_type,
-            result_status: ResultStatus::TimeoutApplied,
+            result_status: ResultStatus::Applied,
             command,
             state_after: GameStateSnapshot {
                 map: default_map(),
@@ -914,63 +655,51 @@ mod tests {
     }
 
     #[test]
-    fn timeout_detection_matches_timeout_applied_event_type() {
-        let step = timeout_step(StepEventType::TimeoutApplied, Some(CommandType::Move));
-        assert!(is_timeout_step(&step));
+    fn ws_event_type_game_started() {
+        let step = make_step(StepEventType::GameStarted, None);
+        assert_eq!(step_ws_event_type(&step), "GAME_STARTED");
     }
 
     #[test]
-    fn timeout_detection_matches_timeout_command_type() {
-        let step = timeout_step(StepEventType::StepApplied, Some(CommandType::Timeout));
-        assert!(is_timeout_step(&step));
+    fn ws_event_type_game_finished() {
+        let step = make_step(StepEventType::GameFinished, None);
+        assert_eq!(step_ws_event_type(&step), "GAME_FINISHED");
     }
 
     #[test]
-    fn timeout_detection_ignores_non_timeout_steps() {
-        let step = timeout_step(StepEventType::StepApplied, Some(CommandType::Move));
-        assert!(!is_timeout_step(&step));
+    fn ws_event_type_timeout_applied() {
+        let step = make_step(StepEventType::TimeoutApplied, Some(CommandType::Timeout));
+        assert_eq!(step_ws_event_type(&step), "TIMEOUT");
     }
 
     #[test]
-    fn speak_detection_matches_applied_speak_step() {
-        let mut step = timeout_step(StepEventType::StepApplied, Some(CommandType::Speak));
-        step.result_status = ResultStatus::Applied;
-        if let Some(command) = step.command.as_mut() {
-            command.speak_text = Some("hello".to_string());
-        }
-        assert!(is_speak_step(&step));
+    fn ws_event_type_move() {
+        let step = make_step(StepEventType::StepApplied, Some(CommandType::Move));
+        assert_eq!(step_ws_event_type(&step), "MOVE");
     }
 
     #[test]
-    fn speak_detection_ignores_non_applied_speak_step() {
-        let step = timeout_step(StepEventType::StepApplied, Some(CommandType::Speak));
-        assert!(!is_speak_step(&step));
+    fn ws_event_type_shoot() {
+        let step = make_step(StepEventType::StepApplied, Some(CommandType::Shoot));
+        assert_eq!(step_ws_event_type(&step), "SHOOT");
     }
 
     #[test]
-    fn game_finished_detection_matches_event_type() {
-        let step = timeout_step(StepEventType::GameFinished, Some(CommandType::Move));
-        assert!(is_game_finished_step(&step));
+    fn ws_event_type_shield() {
+        let step = make_step(StepEventType::StepApplied, Some(CommandType::Shield));
+        assert_eq!(step_ws_event_type(&step), "SHIELD");
     }
 
     #[test]
-    fn shoot_detection_matches_applied_shoot_step() {
-        let mut step = timeout_step(StepEventType::StepApplied, Some(CommandType::Shoot));
-        step.result_status = ResultStatus::Applied;
-        assert!(is_shoot_step(&step));
+    fn ws_event_type_speak() {
+        let step = make_step(StepEventType::StepApplied, Some(CommandType::Speak));
+        assert_eq!(step_ws_event_type(&step), "SPEAK");
     }
 
     #[test]
-    fn shoot_detection_ignores_non_applied_shoot_step() {
-        let step = timeout_step(StepEventType::StepApplied, Some(CommandType::Shoot));
-        assert!(!is_shoot_step(&step));
-    }
-
-    #[test]
-    fn shoot_detection_ignores_non_shoot_commands() {
-        let mut step = timeout_step(StepEventType::StepApplied, Some(CommandType::Move));
-        step.result_status = ResultStatus::Applied;
-        assert!(!is_shoot_step(&step));
+    fn ws_event_type_step_applied_no_command() {
+        let step = make_step(StepEventType::StepApplied, None);
+        assert_eq!(step_ws_event_type(&step), "STEP_APPLIED");
     }
 
     #[test]

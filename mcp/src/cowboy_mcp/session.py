@@ -17,8 +17,11 @@
 from __future__ import annotations
 
 import asyncio
+from collections import deque
 from dataclasses import dataclass, field
 from typing import Any
+
+MAX_RECENT_EVENTS = 50
 
 
 @dataclass
@@ -31,6 +34,11 @@ class Session:
     game_status: str = "UNKNOWN"
     latest_snapshot: dict[str, Any] | None = None
     ws_connected: bool = False
+
+    # Recent game events received via WebSocket
+    recent_events: deque[dict[str, Any]] = field(
+        default_factory=lambda: deque(maxlen=MAX_RECENT_EVENTS), repr=False
+    )
 
     # Signaled whenever the snapshot updates (turn change, game event, etc.)
     _turn_event: asyncio.Event = field(default_factory=asyncio.Event, repr=False)
@@ -49,7 +57,15 @@ class Session:
 
     @property
     def is_my_turn(self) -> bool:
-        return self.current_player_id == self.player_id
+        return self.game_status == "RUNNING" and self.current_player_id == self.player_id
+
+    def add_event(self, event: dict[str, Any]) -> None:
+        """Record a game event from the WebSocket stream."""
+        self.recent_events.append(event)
+
+    def get_recent_events(self) -> list[dict[str, Any]]:
+        """Return recent events as a list."""
+        return list(self.recent_events)
 
     def update_snapshot(self, snapshot: dict[str, Any]) -> None:
         """Update the cached snapshot and signal waiters."""
@@ -74,8 +90,12 @@ class Session:
             if remaining <= 0:
                 return False
             try:
-                await asyncio.wait_for(self._turn_event.wait(), timeout=remaining)
+                await asyncio.wait_for(
+                    self._turn_event.wait(),
+                    timeout=min(remaining, 3.0),
+                )
             except asyncio.TimeoutError:
-                return False
+                # Re-check conditions even without an event (handles missed pulses)
+                pass
             if self.is_my_turn or self.game_status == "FINISHED":
                 return self.is_my_turn

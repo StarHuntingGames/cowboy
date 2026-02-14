@@ -29,6 +29,8 @@ const gameIdInput = document.getElementById("gameIdInput");
 
 const commandGrid = document.getElementById("commandGrid");
 const numPlayersSelect = document.getElementById("numPlayersSelect");
+const numHumanPlayersSelect = document.getElementById("numHumanPlayersSelect");
+const playAsSelect = document.getElementById("playAsSelect");
 let commandControls = {};
 
 const MAP_ROWS = 11;
@@ -139,6 +141,8 @@ const TEMPLATE = [
 const state = {
   phase: "idle",
   numPlayers: DEFAULT_NUM_PLAYERS,
+  numHumanPlayers: 1,
+  playAs: "A",
   map: [],
   players: [],
   currentTurnIndex: 0,
@@ -312,14 +316,24 @@ function resetVisualState() {
   stopLaserAnimationLoop();
 }
 
-async function createBackendGame(numPlayers) {
+function computeBotPlayers(numPlayers, numHumanPlayers) {
+  const all = ALL_PLAYER_NAMES.slice(0, numPlayers);
+  return all.slice(numHumanPlayers);
+}
+
+async function createBackendGame(numPlayers, numHumanPlayers) {
+  const botPlayers = computeBotPlayers(numPlayers, numHumanPlayers);
+  const payload = {
+    turn_timeout_seconds: DEFAULT_TIMEOUT_SECONDS,
+    num_players: numPlayers || getNumPlayers(),
+  };
+  if (botPlayers.length > 0) {
+    payload.bot_players = botPlayers;
+  }
   return requestJson(`${BACKEND.manager}/v2/games`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      turn_timeout_seconds: DEFAULT_TIMEOUT_SECONDS,
-      num_players: numPlayers || getNumPlayers(),
-    }),
+    body: JSON.stringify(payload),
   });
 }
 
@@ -593,8 +607,7 @@ function buildCommandControls() {
   commandGrid.innerHTML = "";
   commandControls = {};
 
-  // Only build controls for Player A (the human player). Bots are AI-controlled.
-  const order = ["A"];
+  const order = [state.playAs];
   for (const playerName of order) {
     const side = SIDES[playerName] || playerName;
     const lowerSide = side.toLowerCase();
@@ -968,12 +981,14 @@ async function createNewGame() {
 
   const selectedNumPlayers = parseInt(numPlayersSelect.value, 10) || DEFAULT_NUM_PLAYERS;
   state.numPlayers = Math.max(1, Math.min(4, selectedNumPlayers));
+  state.numHumanPlayers = Math.max(1, Math.min(state.numPlayers, parseInt(numHumanPlayersSelect.value, 10) || 1));
+  state.playAs = playAsSelect.value || "A";
   buildCommandControls();
   clearCommandInputs();
   render();
 
   try {
-    const created = await createBackendGame(state.numPlayers);
+    const created = await createBackendGame(state.numPlayers, state.numHumanPlayers);
     state.backend.gameId = created.game_id;
     state.backend.status = created.status || "CREATED";
     state.backend.timeoutSeconds = created.turn_timeout_seconds || DEFAULT_TIMEOUT_SECONDS;
@@ -1095,6 +1110,7 @@ async function connectToExistingGame() {
     closeWatcherStream();
     resetVisualState();
 
+    state.playAs = playAsSelect.value || "A";
     state.backend.connected = true;
     state.backend.gameId = game.game_id;
     state.backend.status = game.status || "CREATED";
@@ -1102,6 +1118,7 @@ async function connectToExistingGame() {
 
     const sync = await refreshSnapshot(game.game_id);
     state.phase = phaseFromBackendStatus(state.backend.status);
+    buildCommandControls();
     gameIdInput.value = game.game_id;
     if (state.backend.status === "FINISHED" && sync.winner) {
       announceWinnerIfNeeded(sync, null, true);
@@ -2413,7 +2430,7 @@ window.addEventListener("keydown", (event) => {
       return;
     }
     event.preventDefault();
-    const control = commandControls["A"];
+    const control = commandControls[state.playAs];
     if (control && !control.direction.disabled) {
       control.direction.value = dir;
     }
@@ -2427,7 +2444,7 @@ window.addEventListener("keydown", (event) => {
       return;
     }
     event.preventDefault();
-    const control = commandControls["A"];
+    const control = commandControls[state.playAs];
     if (control && !control.action.disabled) {
       control.action.value = action;
       updateCommandControlMode(control);
@@ -2436,7 +2453,7 @@ window.addEventListener("keydown", (event) => {
         control.speakText.focus();
       } else if (state.phase === "playing") {
         const activePlayer = getActivePlayer();
-        if (activePlayer && activePlayer.name === "A") {
+        if (activePlayer && activePlayer.name === state.playAs) {
           void executeActiveCommand();
         }
       }
@@ -2446,12 +2463,12 @@ window.addEventListener("keydown", (event) => {
 
   if (event.key === "Enter") {
     event.preventDefault();
-    const control = commandControls["A"];
+    const control = commandControls[state.playAs];
     if (control && !control.action.disabled && state.phase === "playing") {
       control.action.value = "speak";
       updateCommandControlMode(control);
       const activePlayer = getActivePlayer();
-      if (activePlayer && activePlayer.name === "A") {
+      if (activePlayer && activePlayer.name === state.playAs) {
         void executeActiveCommand();
       }
     }
@@ -2470,7 +2487,43 @@ setInterval(() => {
   }
 }, 400);
 
+function syncHumanPlayersOptions() {
+  const max = state.numPlayers;
+  const current = state.numHumanPlayers;
+  numHumanPlayersSelect.innerHTML = "";
+  for (let i = 1; i <= max; i++) {
+    const opt = document.createElement("option");
+    opt.value = String(i);
+    opt.textContent = String(i);
+    if (i === Math.min(current, max)) opt.selected = true;
+    numHumanPlayersSelect.appendChild(opt);
+  }
+  state.numHumanPlayers = Math.min(current, max);
+  numHumanPlayersSelect.value = String(state.numHumanPlayers);
+}
+
+function syncPlayAsOptions() {
+  const current = state.playAs;
+  const players = ALL_PLAYER_NAMES.slice(0, state.numPlayers);
+  playAsSelect.innerHTML = "";
+  for (const name of players) {
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.textContent = `${name} (${SIDES[name]})`;
+    if (name === current) opt.selected = true;
+    playAsSelect.appendChild(opt);
+  }
+  if (!players.includes(current)) {
+    state.playAs = players[0] || "A";
+    playAsSelect.value = state.playAs;
+  }
+}
+
 state.numPlayers = parseInt(numPlayersSelect.value, 10) || DEFAULT_NUM_PLAYERS;
+state.numHumanPlayers = parseInt(numHumanPlayersSelect.value, 10) || 1;
+state.playAs = playAsSelect.value || "A";
+syncHumanPlayersOptions();
+syncPlayAsOptions();
 buildCommandControls();
 state.map = cloneMapFromTemplate();
 state.players = createPlayers();
@@ -2481,8 +2534,21 @@ render();
 numPlayersSelect.addEventListener("change", () => {
   if (state.phase !== "idle" && state.phase !== "finished") return;
   state.numPlayers = parseInt(numPlayersSelect.value, 10) || DEFAULT_NUM_PLAYERS;
+  syncHumanPlayersOptions();
+  syncPlayAsOptions();
   buildCommandControls();
   state.players = createPlayers();
+  clearCommandInputs();
+  render();
+});
+
+numHumanPlayersSelect.addEventListener("change", () => {
+  state.numHumanPlayers = parseInt(numHumanPlayersSelect.value, 10) || 1;
+});
+
+playAsSelect.addEventListener("change", () => {
+  state.playAs = playAsSelect.value || "A";
+  buildCommandControls();
   clearCommandInputs();
   render();
 });
