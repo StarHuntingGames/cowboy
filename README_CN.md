@@ -10,7 +10,7 @@
 
 ## 演示
 
-<video src="https://raw.githubusercontent.com/StarHuntingGames/cowboy/refs/heads/main/demo.mp4" autoplay loop muted playsinline width="100%"></video>
+[<video src="https://raw.githubusercontent.com/StarHuntingGames/cowboy/refs/heads/main/demo.mp4" autoplay loop muted playsinline width="100%"></video>](https://github.com/user-attachments/assets/d108a53e-adeb-46fe-8240-ce14deb28c2c)
 
 ## 快速开始
 
