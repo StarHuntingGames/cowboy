@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__cowboy__bind_player",
+      "mcp__cowboy__submit_action",
+      "mcp__cowboy__wait_for_my_turn",
+      "mcp__cowboy__get_game_state",
+      "mcp__cowboy__get_autoplay_status",
+      "mcp__cowboy__explain_next_autoplay_move",
+      "mcp__cowboy__set_autoplay"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "cowboy"
+  ]
+}
