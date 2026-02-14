@@ -57,6 +57,7 @@ struct AppState {
     dedupe: Arc<tokio::sync::Mutex<HashMap<String, HashSet<String>>>>,
     step_seq: Arc<AtomicU64>,
     step_store: Option<DynamoStepStore>,
+    game_locks: Arc<tokio::sync::Mutex<HashMap<String, Arc<tokio::sync::Mutex<()>>>>>,
 }
 
 #[derive(Clone)]
@@ -163,7 +164,16 @@ impl AppState {
                 Utc::now().timestamp_micros().unsigned_abs().max(1),
             )),
             step_store,
+            game_locks: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
         })
+    }
+
+    async fn game_lock(&self, game_id: &str) -> Arc<tokio::sync::Mutex<()>> {
+        let mut locks = self.game_locks.lock().await;
+        locks
+            .entry(game_id.to_string())
+            .or_insert_with(|| Arc::new(tokio::sync::Mutex::new(())))
+            .clone()
     }
 
     fn next_step_seq(&self) -> u64 {
@@ -250,6 +260,8 @@ async fn process_command_handler(
         turn_no: request.turn_no,
         sent_at: request.client_sent_at,
     };
+    let lock = state.game_lock(&command.game_id).await;
+    let _guard = lock.lock().await;
     let outcome = process_command(&state, command).await?;
     Ok(Json(ApplyCommandResponse {
         accepted: outcome.accepted,
@@ -323,6 +335,8 @@ async fn run_command_consumer(state: AppState) -> anyhow::Result<()> {
             "game-service received command from Kafka"
         );
 
+        let lock = state.game_lock(&command.game_id).await;
+        let _guard = lock.lock().await;
         match process_command(&state, command).await {
             Ok(outcome) => {
                 info!(
@@ -340,6 +354,7 @@ async fn run_command_consumer(state: AppState) -> anyhow::Result<()> {
                 warn!(?error, "game-service failed to process command");
             }
         }
+        drop(_guard);
 
         if let Err(error) = consumer.commit_message(&message, CommitMode::Async) {
             warn!(?error, "failed to commit consumed command message");
