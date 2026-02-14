@@ -8,6 +8,10 @@ Last player standing wins.
 
 **This entire project — architecture, backend, frontend, infrastructure, tests, and documentation — is 100% developed by AI agents (Claude Code).** No line of code was written by a human. Human involvement was limited to directing the AI with high-level instructions and reviewing results.
 
+## Demo
+
+https://github.com/user-attachments/assets/demo.mp4
+
 ## Quick Start
 
 **Prerequisites:** Docker and Docker Compose.

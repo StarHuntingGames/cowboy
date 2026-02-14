@@ -8,6 +8,10 @@
 
 **本项目的全部内容——架构、后端、前端、基础设施、测试和文档——均由 AI 代理（Claude Code）100% 开发。** 没有任何一行代码由人类编写。人类的参与仅限于向 AI 提供高层指令和审查结果。
 
+## 演示
+
+https://github.com/user-attachments/assets/demo.mp4
+
 ## 快速开始
 
 **前置条件：** Docker 和 Docker Compose。
