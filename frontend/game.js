@@ -326,10 +326,8 @@ async function createBackendGame(numPlayers, numHumanPlayers) {
   const payload = {
     turn_timeout_seconds: DEFAULT_TIMEOUT_SECONDS,
     num_players: numPlayers || getNumPlayers(),
+    bot_players: botPlayers,
   };
-  if (botPlayers.length > 0) {
-    payload.bot_players = botPlayers;
-  }
   return requestJson(`${BACKEND.manager}/v2/games`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -981,7 +979,7 @@ async function createNewGame() {
 
   const selectedNumPlayers = parseInt(numPlayersSelect.value, 10) || DEFAULT_NUM_PLAYERS;
   state.numPlayers = Math.max(1, Math.min(4, selectedNumPlayers));
-  state.numHumanPlayers = Math.max(1, Math.min(state.numPlayers, parseInt(numHumanPlayersSelect.value, 10) || 1));
+  state.numHumanPlayers = state.numPlayers;
   state.playAs = playAsSelect.value || "A";
   buildCommandControls();
   clearCommandInputs();
@@ -2488,18 +2486,7 @@ setInterval(() => {
 }, 400);
 
 function syncHumanPlayersOptions() {
-  const max = state.numPlayers;
-  const current = state.numHumanPlayers;
-  numHumanPlayersSelect.innerHTML = "";
-  for (let i = 1; i <= max; i++) {
-    const opt = document.createElement("option");
-    opt.value = String(i);
-    opt.textContent = String(i);
-    if (i === Math.min(current, max)) opt.selected = true;
-    numHumanPlayersSelect.appendChild(opt);
-  }
-  state.numHumanPlayers = Math.min(current, max);
-  numHumanPlayersSelect.value = String(state.numHumanPlayers);
+  state.numHumanPlayers = state.numPlayers;
 }
 
 function syncPlayAsOptions() {
@@ -2520,7 +2507,7 @@ function syncPlayAsOptions() {
 }
 
 state.numPlayers = parseInt(numPlayersSelect.value, 10) || DEFAULT_NUM_PLAYERS;
-state.numHumanPlayers = parseInt(numHumanPlayersSelect.value, 10) || 1;
+state.numHumanPlayers = state.numPlayers;
 state.playAs = playAsSelect.value || "A";
 syncHumanPlayersOptions();
 syncPlayAsOptions();
@@ -2542,9 +2529,6 @@ numPlayersSelect.addEventListener("change", () => {
   render();
 });
 
-numHumanPlayersSelect.addEventListener("change", () => {
-  state.numHumanPlayers = parseInt(numHumanPlayersSelect.value, 10) || 1;
-});
 
 playAsSelect.addEventListener("change", () => {
   state.playAs = playAsSelect.value || "A";
