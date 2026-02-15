@@ -1,0 +1,1 @@
+window.COWBOY_SERVER = "";

@@ -1,0 +1,4 @@
+{
+  "buildCommand": "sh frontend/build.sh",
+  "outputDirectory": "frontend"
+}

@@ -259,6 +259,8 @@ services:
       - game-watcher-service
     ports:
       - "8000:80"
+    environment:
+      COWBOY_SERVER: ${COWBOY_SERVER:-}
     volumes:
       - ./nginx/conf/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/start.sh:/docker-entrypoint.d/99-start-msg.sh:ro

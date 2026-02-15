@@ -37,7 +37,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger("cowboy_mcp")
 
-BASE_URL = os.environ.get("COWBOY_BASE_URL", "http://localhost:8000")
+_COWBOY_SERVER = os.environ.get("COWBOY_SERVER", "").strip()
+BASE_URL = _COWBOY_SERVER if _COWBOY_SERVER else os.environ.get("COWBOY_BASE_URL", "http://localhost:8000")
 
 VALID_PLAYER_NAMES = {"A", "B", "C", "D"}
 VALID_COMMAND_TYPES = {"move", "shield", "shoot", "speak"}
@@ -96,7 +97,9 @@ AUTO_PLAY_WAIT_TIMEOUT_SECONDS = float(
 mcp_server = FastMCP("Cowboy Game Controller")
 
 # Module-level state — single session per process
-_client = GameClient(BASE_URL)
+_base_url = BASE_URL
+_client = GameClient(_base_url)
+_connected = False  # True after connect_cowboy is explicitly called
 _session: Session | None = None
 _ws: GameWebSocket | None = None
 _autoplay_enabled = False
@@ -681,6 +684,42 @@ async def _start_autoplay() -> None:
 
 
 @mcp_server.tool()
+async def connect_cowboy(server_url: str) -> str:
+    """Set the Cowboy game server URL to connect to.
+
+    Call this before bind_player if the server is not on localhost:8000.
+    Any existing session will be disconnected.
+
+    Args:
+        server_url: The base URL of the Cowboy server (e.g. "http://192.168.1.5:8000").
+
+    Returns:
+        Confirmation of the new server URL.
+    """
+    global _base_url, _client, _connected, _session, _ws
+
+    await _stop_autoplay()
+
+    if _ws is not None:
+        await _ws.stop()
+        _ws = None
+    _session = None
+
+    await _client.close()
+
+    _base_url = server_url.rstrip("/")
+    _client = GameClient(_base_url)
+    _connected = True
+
+    logger.info("Connected to Cowboy server at %s", _base_url)
+    return json.dumps({
+        "ok": True,
+        "server_url": _base_url,
+        "message": f"Now connected to {_base_url}. Use bind_player to join a game.",
+    }, indent=2)
+
+
+@mcp_server.tool()
 async def bind_player(
     game_id: str,
     player_name: str,
@@ -696,11 +735,19 @@ async def bind_player(
     Returns:
         Session info and the initial game state snapshot.
     """
-    global _session, _ws
+    global _base_url, _client, _connected, _session, _ws
 
     player_name = player_name.upper().strip()
     if player_name not in VALID_PLAYER_NAMES:
         return f"Invalid player_name '{player_name}'. Must be one of: A, B, C, D"
+
+    # Auto-connect to COWBOY_SERVER if connect_cowboy was never called
+    if not _connected and _COWBOY_SERVER:
+        await _client.close()
+        _base_url = _COWBOY_SERVER.rstrip("/")
+        _client = GameClient(_base_url)
+        _connected = True
+        logger.info("Auto-connected to COWBOY_SERVER=%s", _base_url)
 
     await _stop_autoplay()
 
@@ -746,7 +793,7 @@ async def bind_player(
     )
 
     # Start WebSocket listener
-    _ws = GameWebSocket(BASE_URL, _session)
+    _ws = GameWebSocket(_base_url, _session)
     await _ws.start()
     if autoplay:
         await _start_autoplay()
@@ -1036,7 +1083,7 @@ def game_rules_resource() -> str:
 
 def main() -> None:
     """Entry point — run the MCP server over stdio."""
-    logger.info("Starting Cowboy MCP server (base_url=%s)", BASE_URL)
+    logger.info("Starting Cowboy MCP server (base_url=%s)", _base_url)
     mcp_server.run(transport="stdio")
 
 

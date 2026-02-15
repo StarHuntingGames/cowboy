@@ -101,11 +101,12 @@ const SIDES = {
 };
 
 const BACKEND = (() => {
+  const server = (window.COWBOY_SERVER || "").replace(/\/+$/, "");
   const config = window.COWBOY_BACKEND || {};
   return {
-    manager: config.manager || "",
-    web: config.web || "",
-    watcher: config.watcher || "",
+    manager: config.manager || server,
+    web: config.web || server,
+    watcher: config.watcher || server,
   };
 })();
 
