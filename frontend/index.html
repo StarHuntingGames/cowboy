@@ -97,6 +97,28 @@
 
     <section class="rules-section">
       <details class="card rules-card" open>
+        <summary class="rules-toggle"><h2>Play with Claude (MCP)</h2></summary>
+        <div class="rules-content">
+          <div class="rules-text">
+            <ol>
+              <li>Click <strong>New</strong> above to create a game, then copy the <strong>Game ID</strong>.</li>
+              <li>Clone the repo:
+                <code>git clone https://github.com/StarHuntingGames/cowboy.git && cd cowboy</code>
+              </li>
+              <li>Run <code>claude</code> under the <strong>cowboy</strong> folder.</li>
+              <li>In Claude, connect to the server:
+                <code>connect_cowboy("cowboy.rigfw.ovh")</code>
+              </li>
+              <li>Bind to a player:
+                <code>bind_player("&lt;game_id&gt;", "&lt;A, B, C, or D&gt;")</code>
+              </li>
+              <li>Click the <strong>Start</strong> button in this page to begin the game.</li>
+            </ol>
+          </div>
+        </div>
+      </details>
+
+      <details class="card rules-card" open>
         <summary class="rules-toggle"><h2>How Shooting Works</h2></summary>
         <div class="rules-content">
           <img src="assets/laser-sweep-diagram.png" alt="Laser sweep diagram: shoot right sends the laser one cell right, then sweeps up and down" class="rules-diagram" />

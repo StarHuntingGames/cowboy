@@ -24,3 +24,4 @@ test-results/
 
 # Lock files
 uv.lock
+/cloudflare/
