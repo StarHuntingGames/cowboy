@@ -7,7 +7,9 @@
       "mcp__cowboy__get_game_state",
       "mcp__cowboy__get_autoplay_status",
       "mcp__cowboy__explain_next_autoplay_move",
-      "mcp__cowboy__set_autoplay"
+      "mcp__cowboy__set_autoplay",
+      "Bash(curl:*)",
+      "Bash(python3:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

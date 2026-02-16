@@ -1,0 +1,7 @@
+{
+  "name": "cowboy",
+  "description": "Skill that enables Claude to autonomously play the Cowboy turn-based game by connecting to the backend server via HTTP and WebSocket",
+  "author": {
+    "name": "StarHuntingGames"
+  }
+}
