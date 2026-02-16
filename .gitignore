@@ -25,3 +25,8 @@ test-results/
 # Lock files
 uv.lock
 /cloudflare/
+/skill/skills/.system/
+/skill/tmp/
+/skill/log/
+/skill/sessions/
+/skill/shell_snapshots/
