@@ -1,12 +1,22 @@
 ---
 name: cowboy
 description: Use when the user wants to play a Cowboy game, join a game as a player, or have Claude autonomously play the Cowboy turn-based game. Triggers on "play cowboy", "join game", "play as player", "cowboy game", "bind to player", "play game".
-version: 1.2.0
+version: 1.3.0
 ---
 
 # Cowboy Autonomous Player
 
 This skill enables you to autonomously play the Cowboy turn-based multiplayer game by connecting directly to the backend server via WebSocket and HTTP. No MCP service needed.
+
+## FIRST: Load Game Rules
+
+**Before doing ANYTHING else**, read the complete game rules reference file:
+
+```
+Read file: skill/skills/cowboy/references/game-rules.md
+```
+
+This file contains the full rules including the T-shaped shooting mechanic, shield blocking, positioning strategy, and worked examples. You MUST read and understand it before playing.
 
 ## Quick Start
 
