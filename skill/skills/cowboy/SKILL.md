@@ -20,13 +20,21 @@ This file contains the full rules including the T-shaped shooting mechanic, shie
 
 ## Quick Start
 
-The user provides: **game_id**, **player_name** (A/B/C/D), and optionally a **server_url** (default: `http://localhost:8000`).
+The user provides: **game_id**, **player_name** (A/B/C/D), and optionally a **server_url** (default: the `COWBOY_SERVER` environment variable if set, otherwise `http://localhost:8000`).
 
 You then enter an autonomous game loop: a persistent WebSocket listener runs in the background, you wait for your turn, analyze the board, submit the best action via HTTP, repeat until the game ends.
 
 ## Initialization
 
-Before entering the game loop, resolve the player_id:
+First, resolve the server URL. If the user provided one, use it. Otherwise, check the `COWBOY_SERVER` environment variable:
+
+```bash
+echo "${COWBOY_SERVER:-http://localhost:8000}"
+```
+
+Use the result as `$SERVER` for all subsequent calls.
+
+Next, resolve the player_id:
 
 ```bash
 curl -s "$SERVER/v2/games/$GAME_ID" | jq -r ".state.players[] | select(.player_name==\"$PLAYER\") | .player_id"
