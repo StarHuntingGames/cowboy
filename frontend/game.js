@@ -30,6 +30,7 @@ const gameIdInput = document.getElementById("gameIdInput");
 const commandGrid = document.getElementById("commandGrid");
 const numPlayersSelect = document.getElementById("numPlayersSelect");
 const numHumanPlayersSelect = document.getElementById("numHumanPlayersSelect");
+const numHumanPlayersLabel = document.getElementById("numHumanPlayersLabel");
 const playAsSelect = document.getElementById("playAsSelect");
 let commandControls = {};
 
@@ -980,7 +981,9 @@ async function createNewGame() {
 
   const selectedNumPlayers = parseInt(numPlayersSelect.value, 10) || DEFAULT_NUM_PLAYERS;
   state.numPlayers = Math.max(1, Math.min(4, selectedNumPlayers));
-  state.numHumanPlayers = state.numPlayers;
+  state.numHumanPlayers = window.COWBOY_SHOW_BOTS
+    ? parseInt(numHumanPlayersSelect.value, 10) || state.numPlayers
+    : state.numPlayers;
   state.playAs = playAsSelect.value || "A";
   buildCommandControls();
   clearCommandInputs();
@@ -2487,7 +2490,25 @@ setInterval(() => {
 }, 400);
 
 function syncHumanPlayersOptions() {
-  state.numHumanPlayers = state.numPlayers;
+  if (!window.COWBOY_SHOW_BOTS) {
+    numHumanPlayersSelect.hidden = true;
+    if (numHumanPlayersLabel) numHumanPlayersLabel.hidden = true;
+    state.numHumanPlayers = state.numPlayers;
+    return;
+  }
+  numHumanPlayersSelect.hidden = false;
+  if (numHumanPlayersLabel) numHumanPlayersLabel.hidden = false;
+  const prev = state.numHumanPlayers;
+  numHumanPlayersSelect.innerHTML = "";
+  for (let i = 0; i <= state.numPlayers; i++) {
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = i === state.numPlayers ? `${i} (all human)` : i === 0 ? "0 (all bots)" : `${i}`;
+    numHumanPlayersSelect.appendChild(opt);
+  }
+  const clamped = Math.min(prev, state.numPlayers);
+  numHumanPlayersSelect.value = clamped;
+  state.numHumanPlayers = clamped;
 }
 
 function syncPlayAsOptions() {
@@ -2530,6 +2551,12 @@ numPlayersSelect.addEventListener("change", () => {
   render();
 });
 
+
+numHumanPlayersSelect.addEventListener("change", () => {
+  if (state.phase !== "idle" && state.phase !== "finished") return;
+  state.numHumanPlayers = parseInt(numHumanPlayersSelect.value, 10) || state.numPlayers;
+  render();
+});
 
 playAsSelect.addEventListener("change", () => {
   state.playAs = playAsSelect.value || "A";

@@ -9,10 +9,20 @@ if [ -n "$COWBOY_SERVER" ]; then
     http://*|https://*) SERVER_URL="$COWBOY_SERVER" ;;
     *) SERVER_URL="http://$COWBOY_SERVER" ;;
   esac
-  echo "window.COWBOY_SERVER = \"$SERVER_URL\";" > /usr/share/nginx/html/config.js
 else
-  echo "window.COWBOY_SERVER = \"\";" > /usr/share/nginx/html/config.js
+  SERVER_URL=""
 fi
+
+COWBOY_SHOW_BOTS="${COWBOY_SHOW_BOTS:-false}"
+SHOW_BOTS_VALUE="false"
+if [ "$COWBOY_SHOW_BOTS" = "true" ]; then
+  SHOW_BOTS_VALUE="true"
+fi
+
+cat > /usr/share/nginx/html/config.js <<CFGEOF
+window.COWBOY_SERVER = "$SERVER_URL";
+window.COWBOY_SHOW_BOTS = $SHOW_BOTS_VALUE;
+CFGEOF
 
 echo "=== Cowboy Nginx Reverse Proxy ==="
 echo "Listening on port 80 (mapped to host port 8000)"
